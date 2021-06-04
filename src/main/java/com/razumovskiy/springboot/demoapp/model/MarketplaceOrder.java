@@ -50,7 +50,7 @@ public class MarketplaceOrder implements Serializable {
     @Column(name = "mo_order_status")
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
-    @OneToMany(mappedBy = "marketplaceOrder", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "marketplaceOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private Collection<OrderItem> orderItems = new ArrayList<>(1);
 
     public MarketplaceOrder() {
@@ -110,6 +110,16 @@ public class MarketplaceOrder implements Serializable {
 
     public void setOrderItems(Collection<OrderItem> orderItems) {
         this.orderItems = orderItems;
+    }
+
+    public void addOrderItem(OrderItem orderItem) {
+        orderItems.add(orderItem);
+        orderItem.setMarketplaceOrder(this);
+    }
+
+    public void removeOrderItem(OrderItem orderItem) {
+        orderItem.setMarketplaceOrder(null);
+        this.orderItems.remove(orderItem);
     }
 
     @Override

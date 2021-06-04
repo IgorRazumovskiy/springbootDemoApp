@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Currency;
-import java.util.List;
+import java.util.*;
 
 @Service
     public class MarketplaceOrderServiceImpl implements MarketplaceOrderService {
@@ -38,6 +35,7 @@ import java.util.List;
     @Override
     public MarketplaceOrder create(OrderInputDto orderInputDto) {
         MarketplaceOrder orderToSave = new MarketplaceOrder();
+        orderToSave.setDateTime(ZonedDateTime.now());
         fillMarketplaceOrderData(orderInputDto, orderToSave);
         return marketplaceOrderRepository.saveAndFlush(orderToSave);
     }
@@ -47,20 +45,29 @@ import java.util.List;
         order.setCustomerFullName(orderInputDto.getCustomerFullName());
         order.setCustomerEmail(orderInputDto.getCustomerEmail());
 
-        order.getOrderItems().clear();
-        Collection<OrderItem> orderItems = new ArrayList<>();
-        for (OrderItemInputDto orderItemInputDto : orderInputDto.getOrderItems()) {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setMarketplaceOrder(order);
-            orderItem.setProductId(orderItemInputDto.getProductId());
-            orderItem.setProductName(orderItemInputDto.getProductName());
-            orderItem.setOfferPrice(orderItemInputDto.getOfferPrice());
-            orderItem.setCount(orderItemInputDto.getCount());
-            orderItem.setTotalCost(orderItemInputDto.getCount() * orderItemInputDto.getOfferPrice());
-            orderItems.add(orderItem);
+        if (!order.getOrderItems().isEmpty()) {
+            order.getOrderItems().removeIf(
+                    existingOrderItem -> orderInputDto.getOrderItems().stream()
+                    .noneMatch(inputOrderItem -> inputOrderItem.getProductId().equals(existingOrderItem.getId())));
         }
-        order.getOrderItems().addAll(orderItems);
-        order.setDateTime(ZonedDateTime.now());
+
+        for (OrderItemInputDto orderItemInputDto : orderInputDto.getOrderItems()) {
+            OrderItem orderItem;
+            Optional<OrderItem> existingItem = order.getOrderItems().stream()
+                    .filter(oi -> oi.getProductId().equals(orderItemInputDto.getProductId()))
+                    .findAny();
+            if (existingItem.isPresent()) {
+                orderItem = existingItem.get();
+            } else {
+                orderItem = new OrderItem();
+                orderItem.setProductId(orderItemInputDto.getProductId());
+                orderItem.setProductName(orderItemInputDto.getProductName());
+                orderItem.setOfferPrice(orderItemInputDto.getOfferPrice());
+                orderItem.setCount(orderItemInputDto.getCount());
+                orderItem.setTotalCost(orderItemInputDto.getCount() * orderItemInputDto.getOfferPrice());
+            }
+            order.addOrderItem(orderItem);
+        }
     }
 
     @Override
