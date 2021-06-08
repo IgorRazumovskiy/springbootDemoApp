@@ -29,7 +29,7 @@ public class MarketplaceOrderController {
     private MarketplaceOrderService marketplaceOrderService;
 
     @ApiOperation(value = "get list of all MarketplaceOrders")
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<List<MarketplaceOrder>> getAll() {
         return ResponseEntity.ok(marketplaceOrderService.findAll());
     }
@@ -42,12 +42,12 @@ public class MarketplaceOrderController {
 
     @ApiOperation(value = "save new MarketplaceOrder")
     @ApiResponse(code = 201, message = "CREATED", response = MarketplaceOrder.class)
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<MarketplaceOrder> createOrder(@RequestBody OrderInputDto orderInputDto) {
         return new ResponseEntity<>(marketplaceOrderService.create(orderInputDto), HttpStatus.CREATED);
     }
 
-    @PutMapping()
+    @PutMapping
     public ResponseEntity<MarketplaceOrder> updateOrder(@RequestBody OrderInputDto orderInputDto) {
         return ResponseEntity.ok(marketplaceOrderService.update(orderInputDto));
     }

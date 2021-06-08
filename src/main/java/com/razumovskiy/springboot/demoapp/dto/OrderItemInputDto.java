@@ -1,8 +1,19 @@
 package com.razumovskiy.springboot.demoapp.dto;
 
+import com.razumovskiy.springboot.demoapp.model.OrderItem;
 
+import javax.validation.constraints.NotNull;
+
+/**
+ * OrderItemInputDto for input data of {@link OrderItem OrderItem}
+ *
+ * @author Igor Razumovskiy
+ * @version 1.0
+ * @since 03/06/21
+ */
 public class OrderItemInputDto {
 
+    @NotNull(message = "ProductId can not be null")
     private Integer productId;
 
     private String productName;
@@ -10,7 +21,6 @@ public class OrderItemInputDto {
     private Integer offerPrice;
 
     private Integer count;
-
 
     public Integer getProductId() {
         return productId;

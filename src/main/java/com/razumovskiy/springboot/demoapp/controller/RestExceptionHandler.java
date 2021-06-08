@@ -12,7 +12,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * RestExceptionHandler for demoapp
+ * RestExceptionHandler for handling exceptions in demoapp
  *
  * @author Igor Razumovskiy
  * @version 1.0

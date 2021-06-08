@@ -32,6 +32,9 @@ class MarketplaceOrderServiceImplTest {
     @Mock
     private MarketplaceOrderRepository marketplaceOrderRepository;
 
+    @Mock
+    private MarketplaceOrderConverter marketplaceOrderConverter;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -39,83 +42,114 @@ class MarketplaceOrderServiceImplTest {
 
     @Test
     void findAllShouldReturnListWithAllOrders() {
-        when(marketplaceOrderRepository.findAll()).thenReturn(createMarketplaceOrdersList());
-        assertEquals(2, marketplaceOrderService.findAll().size());
+        //given
+        MarketplaceOrder order1 = new MarketplaceOrder();
+        order1.setId(1);
+        MarketplaceOrder order2 = new MarketplaceOrder();
+        order1.setId(2);
+        when(marketplaceOrderRepository.findAll()).thenReturn(Stream.of(order1, order2).collect(Collectors.toList()));
+        //when
+        List<MarketplaceOrder> all = marketplaceOrderService.findAll();
+        //then
+        assertEquals(2, all.size());
     }
 
     @Test
     void findAllShouldReturnEmptyListWhenNoOrders() {
+        //given
         when(marketplaceOrderRepository.findAll()).thenReturn(Collections.emptyList());
-        assertEquals(0, marketplaceOrderService.findAll().size());
+        //when
+        List<MarketplaceOrder> all = marketplaceOrderService.findAll();
+        //then
+        assertEquals(0, all.size());
     }
 
     @Test
     void findOneShouldReturnOrderWhenFound() {
+        //given
         MarketplaceOrder order1 = new MarketplaceOrder();
         order1.setId(1);
         when(marketplaceOrderRepository.findById(anyInt())).thenReturn(Optional.of(order1));
-        assertEquals(order1, marketplaceOrderService.findOne(1));
-        assertNotNull(marketplaceOrderService.findOne(1));
+        //when
+        MarketplaceOrder orderFound = marketplaceOrderService.findOne(1);
+        //then
+        assertEquals(order1, orderFound);
+        assertNotNull(orderFound);
     }
 
     @Test
     void findOneShouldThrowOrderNotFoundExceptionWhenNotFound() {
+        //given
         MarketplaceOrder order1 = new MarketplaceOrder();
         order1.setId(1);
         when(marketplaceOrderRepository.findById(anyInt())).thenReturn(Optional.of(order1));
+        //when
+        Integer orderId = null;
+        //then
         assertThrows(OrderNotFoundException.class, () -> {
-            marketplaceOrderService.findOne(null);
+            marketplaceOrderService.findOne(orderId);
         });
     }
 
     @Test
     @Disabled
     void createShouldReturnOrderWhenSaved() {
+        //given
         OrderInputDto orderInputDto = new OrderInputDto();
         orderInputDto.setCurrency("EUR");
         orderInputDto.setCustomerFullName("name");
         orderInputDto.setCustomerEmail("email");
         orderInputDto.setOrderItems(Sets.newHashSet());
-        MarketplaceOrder order1 = new MarketplaceOrder();
-        when(marketplaceOrderRepository.saveAndFlush(order1)).thenReturn(order1);
-        assertEquals(order1, marketplaceOrderService.create(orderInputDto));
+        MarketplaceOrder order = new MarketplaceOrder();
+        order.setId(1);
+        order.setCustomerFullName("name");
+        order.setOrderItems(Collections.emptyList());
+        when(marketplaceOrderConverter.convertDtoToOrder(orderInputDto, order)).thenReturn(order);
+        when(marketplaceOrderRepository.saveAndFlush(order)).thenReturn(order);
+        //when
+        MarketplaceOrder createdOrder = marketplaceOrderService.create(orderInputDto);
+        //then
+        assertEquals(order, createdOrder);
     }
 
     @Test
     void deleteShouldCallMethodOneTimeWhenOrderFound() {
+        //given
         MarketplaceOrder order1 = new MarketplaceOrder();
         order1.setId(1);
         when(marketplaceOrderRepository.findById(anyInt())).thenReturn(Optional.of(order1));
+        //when
         marketplaceOrderService.delete(1);
+        //then
         verify(marketplaceOrderRepository, times(1)).deleteById(1);
     }
 
     @Test
     void deleteShouldThrowUpdateOrderDataExceptionWhenOrderWithSuccessStatus() {
+        //given
         MarketplaceOrder order1 = new MarketplaceOrder();
-        order1.setId(1);
-        order1.setOrderStatus(OrderStatus.SUCCESS);
+        Integer orderId = 1;
+        order1.setId(orderId);
         when(marketplaceOrderRepository.findById(anyInt())).thenReturn(Optional.of(order1));
+        //when
+        order1.setOrderStatus(OrderStatus.SUCCESS);
+        //then
         assertThrows(UpdateOrderDataException.class, () -> {
-            marketplaceOrderService.delete(1);
+            marketplaceOrderService.delete(orderId);
         });
 
     }
 
     @Test
     void deleteShouldThrowOrderNotFoundExceptionWhenOrderNotFound() {
+        //given
         MarketplaceOrder order1 = new MarketplaceOrder();
         order1.setId(1);
+        //when
+        Integer orderId = 1;
+        //then
         assertThrows(OrderNotFoundException.class, () -> {
-            marketplaceOrderService.delete(1);
+            marketplaceOrderService.delete(orderId);
         });
-    }
-
-    private List<MarketplaceOrder> createMarketplaceOrdersList() {
-        MarketplaceOrder order1 = new MarketplaceOrder();
-        order1.setId(1);
-        MarketplaceOrder order2 = new MarketplaceOrder();
-        order1.setId(2);
-        return Stream.of(order1, order2).collect(Collectors.toList());
     }
 }

@@ -1,8 +1,6 @@
 package com.razumovskiy.springboot.demoapp.model;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -36,14 +34,10 @@ public class MarketplaceOrder implements Serializable {
     @Column(name = "mo_currency")
     private Currency currency;
 
-    @NotEmpty(message = "Customer name can not be empty")
-    @NotNull(message = "Customer name can not be null")
-    @Column(name = "mo_customer_full_name")
+    @Column(name = "mo_customer_full_name", nullable = false)
     private String customerFullName;
 
-    @NotEmpty(message = "Customer email can not be empty")
-    @NotNull(message = "Customer email can not be null")
-    @Column(name = "mo_customer_email")
+    @Column(name = "mo_customer_email", nullable = false)
     private String customerEmail;
 
     @Enumerated(value = EnumType.STRING)

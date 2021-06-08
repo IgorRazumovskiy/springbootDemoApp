@@ -15,13 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+/**
+ * Implementation of {@link MarketplaceOrderService MarketplaceOrderService}
+ *
+ * @author Igor Razumovskiy
+ * @version 1.0
+ * @since 03/06/21
+ */
 @Service
-    public class MarketplaceOrderServiceImpl implements MarketplaceOrderService {
+public class MarketplaceOrderServiceImpl implements MarketplaceOrderService {
 
     @Autowired
     private MarketplaceOrderRepository marketplaceOrderRepository;
 
+    @Autowired
+    private MarketplaceOrderConverter marketplaceOrderConverter;
+
     @Override
+    @Transactional(readOnly = true)
     public List<MarketplaceOrder> findAll() {
         return marketplaceOrderRepository.findAll();
     }
@@ -33,41 +44,12 @@ import java.util.*;
     }
 
     @Override
+    @Transactional
     public MarketplaceOrder create(OrderInputDto orderInputDto) {
         MarketplaceOrder orderToSave = new MarketplaceOrder();
         orderToSave.setDateTime(ZonedDateTime.now());
-        fillMarketplaceOrderData(orderInputDto, orderToSave);
+        orderToSave = marketplaceOrderConverter.convertDtoToOrder(orderInputDto, orderToSave);
         return marketplaceOrderRepository.saveAndFlush(orderToSave);
-    }
-
-    private void fillMarketplaceOrderData(OrderInputDto orderInputDto, MarketplaceOrder order) {
-        order.setCurrency(Currency.getInstance(orderInputDto.getCurrency()));
-        order.setCustomerFullName(orderInputDto.getCustomerFullName());
-        order.setCustomerEmail(orderInputDto.getCustomerEmail());
-
-        if (!order.getOrderItems().isEmpty()) {
-            order.getOrderItems().removeIf(
-                    existingOrderItem -> orderInputDto.getOrderItems().stream()
-                    .noneMatch(inputOrderItem -> inputOrderItem.getProductId().equals(existingOrderItem.getId())));
-        }
-
-        for (OrderItemInputDto orderItemInputDto : orderInputDto.getOrderItems()) {
-            OrderItem orderItem;
-            Optional<OrderItem> existingItem = order.getOrderItems().stream()
-                    .filter(oi -> oi.getProductId().equals(orderItemInputDto.getProductId()))
-                    .findAny();
-            if (existingItem.isPresent()) {
-                orderItem = existingItem.get();
-            } else {
-                orderItem = new OrderItem();
-                orderItem.setProductId(orderItemInputDto.getProductId());
-                orderItem.setProductName(orderItemInputDto.getProductName());
-                orderItem.setOfferPrice(orderItemInputDto.getOfferPrice());
-                orderItem.setCount(orderItemInputDto.getCount());
-                orderItem.setTotalCost(orderItemInputDto.getCount() * orderItemInputDto.getOfferPrice());
-            }
-            order.addOrderItem(orderItem);
-        }
     }
 
     @Override
@@ -79,7 +61,7 @@ import java.util.*;
         if (!orderToUpdate.getOrderStatus().equals(OrderStatus.PENDING)) {
             throw new UpdateOrderDataException("Order with such status can't be updated! Id=" + id);
         }
-        fillMarketplaceOrderData(orderInputDto, orderToUpdate);
+        orderToUpdate = marketplaceOrderConverter.convertDtoToOrder(orderInputDto, orderToUpdate);
         return marketplaceOrderRepository.saveAndFlush(orderToUpdate);
     }
 
